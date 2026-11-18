@@ -949,9 +949,9 @@ function measureReviews(track) {
     track.style.transform = `translate3d(${-shift}px, 0, 0)`;
     syncUi();
   }
-  function goTo(i) {
+  function goTo(i, forceX) {
     i = Math.max(0, Math.min(cards.length - 1, i));
-    const x = Math.min(max, offsets[i] || 0);
+    const x = typeof forceX === 'number' ? forceX : Math.min(max, offsets[i] || 0);
     if (pinned) {
       const stick = parseFloat(pin.style.top) || 0;
       const y = stage.getBoundingClientRect().top + window.scrollY - stick + (x / (max || 1)) * (range - hold);
@@ -986,8 +986,55 @@ function measureReviews(track) {
     syncUi();
   }
 
-  prev.addEventListener('click', () => goTo(cardIndex(position()) - 1));
-  next.addEventListener('click', () => goTo(cardIndex(position()) + 1));
+  // Flèches : on avance d'une position atteignable à l'autre (en fin de piste plusieurs cartes
+  // partagent la même position ; viser une carte déjà visible ne bougerait rien).
+  function step(dir) {
+    const stops = [...new Set(offsets.map((o) => Math.round(Math.min(max, o))))].sort((a, b) => a - b);
+    const x = position();
+    let i = 0, dist = Infinity;
+    stops.forEach((v, k) => { const d = Math.abs(v - x); if (d < dist) { dist = d; i = k; } });
+    const target = stops[Math.max(0, Math.min(stops.length - 1, i + dir))];
+    goTo(cards.length - 1, target);
+  }
+  prev.addEventListener('click', () => step(-1));
+  next.addEventListener('click', () => step(1));
+
+  // Section épinglée : un glissé horizontal (doigt ou trackpad) fait aussi défiler les cartes.
+  // On le convertit en défilement vertical de la page, qui pilote déjà le carrousel.
+  const ratio = () => (range - hold) / (max || 1); // px de scroll vertical pour 1 px de décalage
+  if (pin) {
+    // Trackpad : seuls les gestes nettement horizontaux sont convertis, sans recalage automatique
+    // (un recalage animé se battait avec l'inertie du trackpad et faisait monter/descendre la page).
+    pin.addEventListener('wheel', (e) => {
+      if (!pinned || Math.abs(e.deltaX) < Math.abs(e.deltaY) * 2 || Math.abs(e.deltaX) < 2) return;
+      e.preventDefault();
+      window.scrollBy({ top: e.deltaX * ratio(), behavior: 'instant' });
+    }, { passive: false });
+
+    let sx = 0, sy = 0, sShift = 0, sScroll = 0, mode = '';
+    pin.addEventListener('touchstart', (e) => {
+      if (!pinned || e.touches.length !== 1) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+      sShift = shift; sScroll = window.scrollY; mode = '';
+    }, { passive: true });
+    pin.addEventListener('touchmove', (e) => {
+      if (!pinned || e.touches.length !== 1) return;
+      const dx = e.touches[0].clientX - sx, dy = e.touches[0].clientY - sy;
+      if (!mode && Math.abs(dx) + Math.abs(dy) > 10) mode = Math.abs(dx) > Math.abs(dy) * 1.5 ? 'x' : 'y';
+      if (mode !== 'x') return;
+      e.preventDefault(); // pas de scroll vertical natif pendant un glissé horizontal
+      const target = Math.max(0, Math.min(max, sShift - dx));
+      window.scrollTo({ top: sScroll + (target - sShift) * ratio(), behavior: 'instant' });
+    }, { passive: false });
+    pin.addEventListener('touchend', (e) => {
+      if (mode !== 'x') return;
+      mode = '';
+      const dx = (e.changedTouches[0]?.clientX ?? sx) - sx;
+      // un glissé franc passe à la carte suivante / précédente
+      // glissé franc : carte suivante / précédente ; petit glissé : on reste où on est
+      if (Math.abs(dx) > 40) { shift = sShift; step(dx < 0 ? 1 : -1); }
+    }, { passive: true });
+  }
   dots.forEach((d, k) => d.addEventListener('click', () => goTo(k)));
   track.addEventListener('scroll', () => requestAnimationFrame(syncUi), { passive: true });
   let ticking = false;
