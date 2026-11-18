@@ -1522,11 +1522,14 @@ function chooseSuivi(key) {
     const ease = (t) => 1 - Math.pow(1 - t, 2);
     heroEl.style.setProperty('--h1', ease(h1).toFixed(3));
     heroEl.style.setProperty('--h2', h2.toFixed(3));
-    const p = h2;
+    // Hero entièrement recouvert : masqué pour de bon (sinon Safari le laisse entrevoir lors d'un scroll rapide)
+    const nextEl = heroEl.nextElementSibling;
+    const covered = !!nextEl && nextEl.getBoundingClientRect().top <= heroEl.getBoundingClientRect().top + 1;
+    heroEl.classList.toggle('is-covered', covered);
     // Hero entièrement recouvert : on met la vidéo en pause.
     if (video) {
-      if (p >= 1 && !video.paused) { video.dataset.coverPaused = '1'; video.pause(); }
-      else if (p < 1 && video.dataset.coverPaused) { delete video.dataset.coverPaused; video.play().catch(() => {}); }
+      if (covered && !video.paused) { video.dataset.coverPaused = '1'; video.pause(); }
+      else if (!covered && video.dataset.coverPaused) { delete video.dataset.coverPaused; video.play().catch(() => {}); }
     }
   }
   window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });

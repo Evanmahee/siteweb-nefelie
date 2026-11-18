@@ -232,6 +232,8 @@ sup { font-size: .6em; vertical-align: super; line-height: 0; }
   transform: scale(calc(1 - .06 * var(--h1) - .08 * var(--h2)));
   will-change: transform;
 }
+/* une fois recouvert par les sections, le hero n'est plus dessiné du tout */
+.hero.is-covered { visibility: hidden; }
 /* assombrissement au scroll : simple voile (un filtre flou animé sur la vidéo faisait ramer les téléphones) */
 .hero::before {
   content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none; border-radius: inherit;
