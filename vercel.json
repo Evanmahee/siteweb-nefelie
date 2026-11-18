@@ -35,22 +35,27 @@
   "redirects": [
     {
       "source": "/contact",
-      "destination": "/#contact",
-      "permanent": true
-    },
-    {
-      "source": "/contact.html",
-      "destination": "/#contact",
+      "destination": "/contact.html",
       "permanent": true
     },
     {
       "source": "/a-propos",
-      "destination": "/#apropos",
+      "destination": "/#coach",
+      "permanent": true
+    },
+    {
+      "source": "/marketplace",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/marketplace.html",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/a-propos.html",
-      "destination": "/#apropos",
+      "destination": "/#coach",
       "permanent": true
     }
   ]

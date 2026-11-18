@@ -26,6 +26,7 @@ function checkboxValues(form, name) {
 export function collectContactFormData(form) {
   return {
     website: fieldValue(form, "website"),
+    consentement: form.elements["consentement"] && form.elements["consentement"].checked ? "oui" : "",
     prenom: fieldValue(form, "prenom"),
     nom: fieldValue(form, "nom"),
     email: fieldValue(form, "email"),
@@ -82,6 +83,8 @@ export function collectContactFormData(form) {
 }
 
 const submissions = new WeakMap();
+// Anti-robot : temps passé sur la page avant l'envoi (un humain met bien plus de 3 s à remplir la fiche)
+const pageLoadedAt = Date.now();
 
 export async function sendContactEmail(form) {
   const data = collectContactFormData(form);
@@ -97,7 +100,7 @@ export async function sendContactEmail(form) {
     const res = await fetch("/api/send-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...data, requestId: submission.requestId }),
+      body: JSON.stringify({ ...data, requestId: submission.requestId, elapsedMs: Date.now() - pageLoadedAt }),
       signal: controller.signal,
     });
     let body;

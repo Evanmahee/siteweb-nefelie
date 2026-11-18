@@ -7,12 +7,12 @@ async function request(body, options = {}) {
   const res = {headers:{}, setHeader(k,v){this.headers[k]=v;}, status(n){this.code=n;return this;}, json(body){this.body=body;}};
   await handler(req,res); return res;
 }
-const valid = {prenom:'Test',nom:'Contact',email:'test@example.test',type_accompagnement:'distanciel',budget_mensuel:'moins-150'};
+const valid = {elapsedMs:60000,consentement:'oui',prenom:'Test',nom:'Contact',email:'test@example.test',type_accompagnement:'distanciel',budget_mensuel:'moins-150'};
 test('reject malformed, foreign-origin, oversized and invalid fields before sending',async()=>{
   assert.equal((await request(valid,{method:'GET'})).code,405);
   assert.equal((await request(valid,{headers:{host:'example.test',origin:'https://attacker.test','content-type':'application/json'}})).code,403);
   assert.equal((await request(valid,{headers:{host:'example.test','content-type':'text/plain'}})).code,415);
-  for(const body of [null,[], '{', {...valid,email:'bad'}, {...valid,prenom:{x:1}}, {...valid,nom:'A\r\nB'}, {...valid,message:'x'.repeat(5001)}]) assert.equal((await request(body)).code,400);
+  for(const body of [null,[], '{', {...valid,email:'bad'}, {...valid,prenom:{x:1}}, {...valid,nom:'A\r\nB'}, {...valid,message:'x'.repeat(5001)}, {...valid,consentement:''}, {...valid,consentement:'non'}]) assert.equal((await request(body)).code,400);
   assert.equal((await request({...valid,message:'x'.repeat(65536)})).code,413);
 });
 test('honeypot does not contact provider; throttling rejects repeated submissions',async()=>{
@@ -56,4 +56,25 @@ test('streamed JSON preserves multibyte names split across network chunks',async
     const res=await request(undefined,{async *[Symbol.asyncIterator](){yield buffer.subarray(0,split);yield buffer.subarray(split);}});
     assert.equal(res.code,200);assert.ok(payload.subject.includes('Néfélie'));
   }finally{globalThis.fetch=original;if(oldKey===undefined)delete process.env.RESEND_API_KEY;else process.env.RESEND_API_KEY=oldKey;}
+});
+
+test('accepts every accompaniment value the contact form can send',async()=>{
+  for (const value of ['distance','presentiel','complet','bilan','programme','carte','become']) {
+    const res=await request({...valid,type_accompagnement:value},{socket:{remoteAddress:`values-${value}`}});
+    assert.notEqual(res.code,400,`${value} should not be rejected as invalid`);
+  }
+});
+
+test('submissions sent too fast or without timing are silently dropped (no provider call)',async()=>{
+  const original=globalThis.fetch;let calls=0;
+  globalThis.fetch=async()=>{calls++;return new Response('{}');};
+  const prev=process.env.RESEND_API_KEY;process.env.RESEND_API_KEY='re_test';
+  try{
+    for (const elapsedMs of [undefined, 500, '9000', -1]) {
+      const body={...valid}; if (elapsedMs===undefined) delete body.elapsedMs; else body.elapsedMs=elapsedMs;
+      const res=await request(body,{socket:{remoteAddress:`fast-${String(elapsedMs)}`}});
+      assert.deepEqual(res.body,{success:true});
+    }
+    assert.equal(calls,0);
+  }finally{globalThis.fetch=original;if(prev===undefined)delete process.env.RESEND_API_KEY;else process.env.RESEND_API_KEY=prev;}
 });

@@ -6,11 +6,13 @@ import sendEmailHandler from "./api/send-email.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 
-/** Pages actuelles uniquement ; les anciennes URL redirigent vers la one page. */
+/** Pages du site : accueil, contact, CGV, confidentialité, mentions légales. */
 const htmlEntries = {
   index: resolve(root, "index.html"),
   mentions: resolve(root, "mentions-legales.html"),
-  marketplace: resolve(root, "marketplace.html"),
+  contact: resolve(root, "contact.html"),
+  cgv: resolve(root, "cgv.html"),
+  confidentialite: resolve(root, "confidentialite.html"),
 };
 
 function avisApiDevPlugin() {
@@ -20,10 +22,9 @@ function avisApiDevPlugin() {
       server.middlewares.use((req, res, next) => {
         const path = (req.url || "").split("?")[0];
         const destination = {
-          "/contact": "/#contact",
-          "/contact.html": "/#contact",
-          "/a-propos": "/#apropos",
-          "/a-propos.html": "/#apropos",
+          "/contact": "/contact.html",
+          "/a-propos": "/#coach",
+          "/a-propos.html": "/#coach",
         }[path];
         if (!destination) return next();
         res.writeHead(308, { Location: destination });

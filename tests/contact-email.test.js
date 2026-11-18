@@ -13,7 +13,7 @@ test('retries keep the same request ID; altered or completed submissions receive
   globalThis.fetch=async(url,options)=>{assert.equal(url,'/api/send-email');assert.ok(options.signal);sent.push(JSON.parse(options.body));return new Response(JSON.stringify(success?{success:true}:{error:'Trop de tentatives.'}),{status:success?200:429});};
   try{
     const f=form();await assert.rejects(sendContactEmail(f),/Trop de tentatives/);await assert.rejects(sendContactEmail(f));
-    assert.equal(sent[0].requestId,sent[1].requestId);
+    assert.equal(sent[0].requestId,sent[1].requestId);assert.equal(typeof sent[0].elapsedMs,'number');
     f.elements.message.value='Autre message';success=true;await sendContactEmail(f);assert.notEqual(sent[1].requestId,sent[2].requestId);
     await sendContactEmail(f);assert.notEqual(sent[2].requestId,sent[3].requestId);
   }finally{globalThis.fetch=original;}

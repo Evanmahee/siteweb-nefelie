@@ -147,7 +147,7 @@
 
   function scrollFormToTop(form) {
     var target = form.querySelector(".form-wizard__progress") || form;
-    var header = document.querySelector(".site-header") || document.querySelector(".header");
+    var header = document.querySelector(".gnav") || document.querySelector(".site-header") || document.querySelector(".header");
     var offset = (header ? Math.max(0, header.getBoundingClientRect().bottom) : 0) + 16;
     var top = window.scrollY + target.getBoundingClientRect().top - offset;
     var reduceMotion =
@@ -216,7 +216,7 @@
       }
     }
 
-    var card = form.closest(".contact-dark__card");
+    var card = form.closest(".contact-dark__card, .contact__card");
     if (shouldScroll && card) {
       window.requestAnimationFrame(function () {
         scrollFormToTop(form);
@@ -385,9 +385,9 @@
       getStep: function () {
         return currentStep;
       },
-      setStep: function (s) {
+      setStep: function (s, options) {
         currentStep = Math.min(TOTAL_STEPS, Math.max(1, Math.floor(Number(s)) || 1));
-        showStep(form, currentStep);
+        showStep(form, currentStep, options);
       },
     };
     window.contactWizard = api;

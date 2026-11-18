@@ -56,6 +56,7 @@ const FIELD_LABELS = {
   type_accompagnement: "Type d'accompagnement",
   budget_mensuel: "Budget mensuel",
   message: "Message libre",
+  consentement: "Consentement (données de santé incluses)",
 };
 
 function sendJson(res, status, data) {
@@ -184,6 +185,11 @@ export default async function handler(req, res) {
     return sendJson(res, 400, { error: "Données invalides." });
   }
   if (data.website) return sendJson(res, 200, { success: true }); // Honeypot: no email is sent.
+  // Anti-robot : fiche envoyée trop vite (ou sans mesure de temps) → ignorée en silence, sans e-mail.
+  const MIN_FILL_MS = 3000;
+  if (typeof data.elapsedMs !== "number" || !Number.isFinite(data.elapsedMs) || data.elapsedMs < MIN_FILL_MS) {
+    return sendJson(res, 200, { success: true });
+  }
   const requestId = data.requestId;
   if (requestId !== undefined && (typeof requestId !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(requestId))) {
     return sendJson(res, 400, { error: "Identifiant de demande invalide." });
@@ -201,6 +207,9 @@ export default async function handler(req, res) {
   const nom = String(data.nom || "").trim();
   const email = String(data.email || "").trim();
 
+  if (data.consentement !== "oui") {
+    return sendJson(res, 400, { error: "Merci d’accepter l’utilisation de tes informations pour envoyer ta fiche." });
+  }
   if (!prenom || !nom || !email) {
     sendJson(res, 400, { error: "Prénom, nom et e-mail sont requis." });
     return;
@@ -212,7 +221,7 @@ export default async function handler(req, res) {
   }
 
   const choices = data.type_accompagnement.split(",").map(value => value.trim()).filter(Boolean);
-  if (!choices.length || choices.some(value => !["distanciel", "presentiel", "complet", "carte", "become"].includes(value)) ||
+  if (!choices.length || choices.some(value => !["distance", "distanciel", "presentiel", "complet", "bilan", "programme", "carte", "become"].includes(value)) ||
       !["moins-150", "150-350", "350+"].includes(data.budget_mensuel)) {
     return sendJson(res, 400, { error: "Sélectionne un accompagnement et un budget." });
   }

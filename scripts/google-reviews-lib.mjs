@@ -4,6 +4,7 @@
 export function mergeGoogleReviews(cache, place) {
   const reviews = Array.isArray(cache.reviews) ? [...cache.reviews] : [];
   const googleTotal = place.userRatingCount ?? cache.googleTotal ?? reviews.length;
+  const googleRating = place.rating ?? cache.googleRating ?? null;
   const incoming = Array.isArray(place.reviews) ? place.reviews : [];
 
   const keys = new Set(
@@ -27,6 +28,7 @@ export function mergeGoogleReviews(cache, place) {
 
   return {
     googleTotal,
+    ...(googleRating != null ? { googleRating } : {}),
     updatedAt: new Date().toISOString(),
     reviews,
   };
