@@ -525,7 +525,26 @@ function measureReviews(track) {
     return card ? card.getBoundingClientRect().width + 16 : 320;
   };
   const bar = document.querySelector('[data-reviews-progress]');
+  // Mobile : points sous les avis ; celui en cours s'allonge en trait qui se remplit, puis l'avis suivant arrive.
+  const dotsEl = document.querySelector('[data-reviews-dots]');
+  const renderDots = () => {
+    if (!dotsEl) return;
+    const n = track.querySelectorAll('.review').length;
+    if (n < 2) { dotsEl.innerHTML = ''; return; }
+    const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 8;
+    const i = atEnd ? n - 1 : Math.min(n - 1, Math.round(track.scrollLeft / step()));
+    const MAX = 7;
+    const start = Math.max(0, Math.min(i - 3, n - MAX));
+    const end = Math.min(n, start + MAX);
+    let html = '';
+    for (let k = start; k < end; k++) {
+      const edge = (k === start && start > 0) || (k === end - 1 && end < n);
+      html += `<span class="${k === i ? 'is-on' : ''}${edge ? ' is-edge' : ''}"><b></b></span>`;
+    }
+    if (dotsEl.innerHTML !== html) dotsEl.innerHTML = html;
+  };
   const syncButtons = () => {
+    renderDots();
     prev.disabled = track.scrollLeft < 8;
     next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 8;
     track.classList.toggle('is-scrolled', track.scrollLeft > 8);
@@ -562,7 +581,7 @@ function measureReviews(track) {
   const progress = bar.parentElement;
   const isRunning = () => visible && !document.hidden
     && !track.querySelector('.review.is-open') && track.scrollWidth > track.clientWidth + 8;
-  const reset = () => { elapsed = 0; bar.style.setProperty('--t', '0'); };
+  const reset = () => { elapsed = 0; bar.style.setProperty('--t', '0'); dotsEl?.style.setProperty('--t', '0'); };
   const advance = () => {
     if (track.scrollLeft + track.clientWidth >= track.scrollWidth - 8) {
       track.scrollTo({ left: 0, behavior: 'smooth' });
@@ -579,6 +598,7 @@ function measureReviews(track) {
       elapsed += dt;
       if (elapsed >= INTERVAL) { reset(); advance(); }
       bar.style.setProperty('--t', String(Math.min(1, elapsed / INTERVAL)));
+      dotsEl?.style.setProperty('--t', String(Math.min(1, elapsed / INTERVAL)));
     }
     requestAnimationFrame(loop);
   };
@@ -974,6 +994,13 @@ function measureReviews(track) {
   const after = root.querySelector('[data-ba-after]');
   const story = root.querySelector('[data-ba-story]');
   const picks = [...root.querySelectorAll('.ba-pick')];
+  // « Fais défiler » seulement s'il y a vraiment des élèves cachés à droite
+  const pickList = root.querySelector('.ba-picks');
+  const hint = root.querySelector('.ba-picks__hint');
+  const syncHint = () => { if (hint && pickList) hint.hidden = pickList.scrollWidth <= pickList.clientWidth + 4 || pickList.scrollLeft > 24; };
+  pickList?.addEventListener('scroll', syncHint, { passive: true });
+  window.addEventListener('resize', syncHint, { passive: true });
+  requestAnimationFrame(syncHint);
   const field = (k) => root.querySelector(`[data-ba-${k}]`);
   let interacted = false;
 

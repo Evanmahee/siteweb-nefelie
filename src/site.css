@@ -59,7 +59,7 @@ html { background: var(--bg); scroll-behavior: smooth; scroll-padding-top: calc(
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: var(--font); font-size: 17px; line-height: 1.47; font-weight: 450; letter-spacing: -0.012em;
-  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: hidden; overflow-x: clip; /* clip : ne casse pas la nav « sticky » sur iOS */
 }
 body.menu-open { overflow: hidden; }
 img, video { display: block; max-width: 100%; height: auto; }
@@ -1373,3 +1373,113 @@ img.is-pending { background: linear-gradient(100deg, #ececf0 30%, #f7f7f9 50%, #
   .acc__cap { width: 100%; padding: 20px; }
 }
 
+
+/* ==========================================================================
+   Retouches mobile
+   ========================================================================== */
+/* Retours à la ligne du manifeste : uniquement sur téléphone (photos en zigzag) */
+.mbr { display: none; }
+.reviews__dots, .ba-picks__hint { display: none; }
+
+/* Détail d'un suivi : prix puis bouton pleine largeur */
+.pmodal__foot { flex-direction: column; align-items: stretch; gap: 14px; }
+.pmodal__foot .pill { width: 100%; justify-content: space-between; }
+
+@media (max-width: 834px) {
+  /* nav : vraie pastille flottante, nettement plus étroite que l'écran */
+  .gnav__inner { --mini: min(300px, calc(100% - 40px)); }
+  /* avant / après : la 3e carte dépasse pour montrer qu'on peut faire défiler */
+  /* 3 élèves visibles d'un coup ; au-delà, la suivante dépasse et l'indication « Fais défiler » apparaît */
+  .ba-picks { grid-auto-columns: calc((100% - 20px) / 3); }
+  .ba-pick { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; justify-items: center; row-gap: 8px; padding: 12px 8px; text-align: center; }
+  .ba-pick__thumb { grid-row: auto; width: 44px; height: 44px; }
+  .ba-pick__res { display: none; }
+  .ba-picks__hint[hidden] { display: none !important; }
+  .ba-picks__hint { display: flex; align-items: center; gap: 6px; margin: clamp(24px, 3vw, 36px) 0 0; font-size: 14px; font-weight: 500; color: var(--muted); }
+  .ba-picks__hint span { display: inline-block; animation: hintNudge 1.6s var(--ease) infinite; }
+  .ba-picks__hint + .ba-picks { margin-top: 12px; }
+  /* FAQ : la photo d'abord, puis le titre et les réponses */
+  .faq-card { order: 0; min-height: 400px; }
+}
+@keyframes hintNudge { 0%, 100% { transform: none; } 50% { transform: translateX(4px); } }
+
+@media (max-width: 640px) {
+  /* manifeste */
+  .mbr { display: inline; }
+  .manifesto__text { font-size: min(8.3vw, 34px); line-height: 1.2; }
+
+  /* à propos : fil vertical à gauche des cartes, qui se remplit au scroll */
+  .steps4__cards { padding-left: 30px; }
+  .card4 { position: relative; }
+  .card4::before {
+    content: ""; position: absolute; left: -30px; top: 30px; z-index: 1;
+    width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; background: #fff; border: 2px solid #d2d2d7;
+    transition: background-color .3s, border-color .3s, transform .3s var(--ease);
+  }
+  .card4::after {
+    content: ""; position: absolute; left: -24px; top: 44px; width: 2px; height: calc(100% + var(--g) - 14px);
+    border-radius: 2px; background: #e3e3e8; transition: background-color .4s;
+  }
+  .card4:last-child::after { display: none; }
+  .card4.is-on::before { background: var(--ink); border-color: var(--ink); }
+  .card4.is-current::before { transform: scale(1.25); }
+  .card4.is-on:has(+ .card4.is-on)::after { background: var(--ink); }
+
+  /* méthode : en-tête compact, image ouverte plus haute */
+  .ess.is-pinned .ess__pin { padding-top: 16px; }
+  .ess__head { flex-wrap: nowrap; align-items: flex-end; gap: 16px; margin-bottom: 14px; }
+  .ess__head > :first-child { min-width: 0; }
+  .ess__ctrl { width: auto; margin-top: 0; flex: none; gap: 8px; }
+  .ess__count { display: none; }
+  .acc { gap: 6px; height: calc(100svh - var(--gnav-h) - 150px); min-height: 480px; }
+  .acc__item { flex: var(--o) 0 44px; }
+  .acc__num { top: 22px; }
+  .acc__label { top: 22px; font-size: 15px; }
+
+  /* « Tu hésites entre deux suivis ? » */
+  .plan-contact { grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 14px 14px; padding: 20px; }
+  .plan-contact__avatar { width: 44px; height: 44px; }
+  .plan-contact__copy { display: contents; }
+  .plan-contact__copy h3 { font-size: 19px; line-height: 1.2; }
+  .plan-contact__copy p { grid-column: 1 / -1; margin: 0; font-size: 15px; }
+  .plan-contact__ctas { grid-column: 1 / -1; flex-direction: column; align-items: stretch; gap: 14px; margin-top: 4px; }
+  .plan-contact__btn { width: 100%; }
+  .plan-contact__link { text-align: center; }
+
+  /* avis : plus de flèches, des points qui avancent tout seuls */
+  .reviews__ctrl { display: none; }
+  .reviews__dots { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 18px; }
+  .reviews__dots span { position: relative; width: 6px; height: 6px; border-radius: 6px; background: #d2d2d7; overflow: hidden; transition: width .4s var(--ease), background-color .3s; }
+  .reviews__dots span.is-edge { transform: scale(.65); }
+  .reviews__dots span.is-on { width: 34px; background: #dcdce1; }
+  .reviews__dots span b { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; background: var(--ink); }
+  .reviews__dots span.is-on b { width: calc(var(--t, 0) * 100%); }
+
+  /* footer compact */
+  .gfoot { padding-inline: 10px; }
+  .gfoot__card { padding: 28px 20px 18px; }
+  .gfoot__top { flex-wrap: nowrap; align-items: center; gap: 16px; padding-bottom: 24px; }
+  .gfoot__brand img { height: 44px; }
+  .gfoot__brand p { display: none; }
+  .gfoot .gfoot__pill { height: 44px; min-height: 44px; padding: 0 18px; font-size: 15px; white-space: nowrap; }
+  .gfoot__cols { grid-template-columns: 1fr 1fr; gap: 22px 16px; padding: 22px 0; font-size: 14px; }
+  .gfoot__cols div { gap: 7px; }
+  .gfoot__cols h3 { margin-bottom: 2px; font-size: 11px; }
+  .gfoot__cols div:nth-child(2), .gfoot__cols div:nth-child(3) { display: none; }
+  .gfoot__notes { display: none; }
+  .gfoot__legal { gap: 6px 16px; padding-top: 18px; font-size: 12px; }
+  .gfoot__legal > span:first-child { flex-basis: 100%; }
+  .gfoot__loc { display: none; }
+  .gfoot__top-btn { padding: 4px; font-size: 0; gap: 0; }
+  .gfoot__top-ico { width: 32px; height: 32px; }
+}
+
+/* Formulaire de contact sur téléphone : champs courts deux par deux, en-tête d'étape centré */
+@media (max-width: 640px) {
+  .form-wizard__meta { align-items: center; text-align: center; }
+  .contact-form__grid2:has(#prenom) { grid-template-columns: 1fr 1fr; gap: 14px 12px; align-items: end; }
+  .contact-form__grid2:has(#prenom) > .field:has(#email),
+  .contact-form__grid2:has(#prenom) > .field:has(#telephone),
+  .contact-form__grid2:has(#prenom) > .field:has(#metier),
+  .contact-form__grid2:has(#prenom) > :not(.field) { grid-column: 1 / -1; }
+}
