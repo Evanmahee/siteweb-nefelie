@@ -7,6 +7,26 @@ document.documentElement.classList.add('js');
 // Choix assumé : toutes les animations sont jouées pour tout le monde (même avec « réduire les animations »).
 const reduceMotion = false;
 
+// Hauteur d'écran « stable » : sur téléphone, la barre d'adresse qui apparaît / disparaît au scroll
+// change innerHeight. Les sections épinglées ne doivent pas se recalculer pour ça (sinon la page saute) :
+// on ne prend en compte que les vrais changements (largeur, rotation, grand écart de hauteur).
+let stableW = window.innerWidth;
+let stableH = window.innerHeight;
+function viewportChanged() {
+  const w = window.innerWidth, h = window.innerHeight;
+  if (w !== stableW || Math.abs(h - stableH) > 160) { stableW = w; stableH = h; return true; }
+  return false;
+}
+const stableVh = () => stableH;
+// Recalcul seulement sur un vrai redimensionnement
+function onRealResize(fn) {
+  let t;
+  window.addEventListener('resize', () => {
+    if (!viewportChanged()) return;
+    clearTimeout(t); t = setTimeout(fn, 120);
+  }, { passive: true });
+}
+
 /* ---------- Année ---------- */
 document.querySelectorAll('[data-year]').forEach((el) => {
   el.textContent = String(new Date().getFullYear());
@@ -742,7 +762,7 @@ function measureReviews(track) {
   function measure() {
     if (!pinned) { paint(Math.max(0, index)); return; }
     section.classList.add('is-pinned');
-    range = Math.max(400, window.innerHeight * 0.8) * last;
+    range = Math.max(400, stableVh() * 0.8) * last;
     section.style.height = `${pin.offsetHeight + range}px`;
     shown = -1;
     tick();
@@ -758,7 +778,7 @@ function measureReviews(track) {
   prev?.addEventListener('click', () => go(index - 1));
   next?.addEventListener('click', () => go(index + 1));
   window.addEventListener('scroll', wake, { passive: true });
-  window.addEventListener('resize', measure, { passive: true });
+  onRealResize(measure);
   window.addEventListener('load', measure);
   paint(0);
   measure();
@@ -970,16 +990,17 @@ function measureReviews(track) {
     max = Math.max(0, track.scrollWidth - track.clientWidth);
     offsets = cards.map((c) => c.offsetLeft - cards[0].offsetLeft);
     ctrl.hidden = max <= 4;
-    const avail = window.innerHeight - navH() - 24;
+    const vh = stableVh();
+    const avail = vh - navH() - 24;
     if (stage && pin && !reduceMotion && max > 4 && pin.offsetHeight <= avail) {
       pinned = true;
       track.scrollLeft = 0;
       stage.classList.add('is-pinned');
-      hold = Math.round(window.innerHeight * 0.2);
+      hold = Math.round(vh * 0.2);
       range = Math.round(max * 2) + hold;
       const h = pin.offsetHeight;
       // centré dans l'espace sous la nav
-      pin.style.top = `${Math.round(navH() + Math.max(16, (window.innerHeight - navH() - h) / 2))}px`;
+      pin.style.top = `${Math.round(navH() + Math.max(16, (vh - navH() - h) / 2))}px`;
       stage.style.height = `${h + range}px`;
       render();
     }
@@ -1045,7 +1066,7 @@ function measureReviews(track) {
   }, { passive: true });
   let rt;
   const remeasure = () => { clearTimeout(rt); rt = setTimeout(measure, 120); };
-  window.addEventListener('resize', remeasure, { passive: true });
+  onRealResize(measure);
   window.addEventListener('load', measure);
   document.fonts?.ready.then(remeasure);
   // les polices / images peuvent changer la hauteur des cartes après coup
@@ -1494,7 +1515,7 @@ function chooseSuivi(key) {
     const h = heroEl.offsetHeight || 1;
     const clamp = (v) => Math.min(1, Math.max(0, v));
     // 1er temps : le hero recule seul (zone réservée de 40vh avant la section suivante).
-    const first = window.innerHeight * 0.4;
+    const first = stableVh() * 0.4;
     const h1 = clamp(y / first);
     // 2e temps : la section suivante passe par-dessus, le hero recule encore et se trouble.
     const h2 = clamp((y - first) / (h * 0.75));

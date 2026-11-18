@@ -230,8 +230,12 @@ sup { font-size: .6em; vertical-align: super; line-height: 0; }
   transform-origin: 50% 0;
   /* 1er temps : recul rapide ; 2e temps : recul continu pendant que la section passe dessus */
   transform: scale(calc(1 - .06 * var(--h1) - .08 * var(--h2)));
-  filter: brightness(calc(1 - .04 * var(--h1) - .3 * var(--h2))) blur(calc(6px * var(--h2)));
   will-change: transform;
+}
+/* assombrissement au scroll : simple voile (un filtre flou animé sur la vidéo faisait ramer les téléphones) */
+.hero::before {
+  content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none; border-radius: inherit;
+  background: #000; opacity: calc(.04 * var(--h1) + .34 * var(--h2));
 }
 main > section:not(.hero) { position: relative; z-index: 1; background: var(--bg); }
 main > .hero + section {
