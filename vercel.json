@@ -43,6 +43,17 @@
   ],
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.nefeliecoaching.com"
+        }
+      ],
+      "destination": "https://nefeliecoaching.com/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
