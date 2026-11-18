@@ -4,7 +4,8 @@ import { sendContactEmail } from './contact-email.js';
 
 document.documentElement.classList.add('js');
 
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Choix assumé : toutes les animations sont jouées pour tout le monde (même avec « réduire les animations »).
+const reduceMotion = false;
 
 /* ---------- Année ---------- */
 document.querySelectorAll('[data-year]').forEach((el) => {
@@ -47,6 +48,9 @@ navLinks.forEach((a) => { const s = document.querySelector(a.getAttribute('href'
   const video = document.getElementById('hero-video');
   const btn = document.querySelector('[data-video-toggle]');
   if (!video) return;
+  // Téléphones : version 720p plus légère (≈ 2,8 Mo au lieu de 7,7 Mo)
+  const mobileSrc = video.dataset.srcMobile;
+  if (mobileSrc && window.matchMedia('(max-width: 834px)').matches) video.src = mobileSrc;
   const sync = () => {
     const paused = video.paused;
     btn?.classList.toggle('is-paused', paused);
@@ -56,7 +60,19 @@ navLinks.forEach((a) => { const s = document.querySelector(a.getAttribute('href'
   video.addEventListener('pause', sync);
   btn?.addEventListener('click', () => { if (video.paused) video.play().catch(() => {}); else video.pause(); });
   if (reduceMotion) { if (btn) btn.hidden = false; sync(); return; }
-  video.play().then(() => { if (btn) btn.hidden = false; }).catch(() => { if (btn) btn.hidden = false; sync(); });
+  const startVideo = () => video.play().then(() => { if (btn) btn.hidden = false; }).catch(() => { if (btn) btn.hidden = false; sync(); });
+  // Premier lancement : la vidéo attend la fin du chargement pour démarrer depuis le début
+  const loaderShown = document.querySelector('[data-loader]') && !document.documentElement.classList.contains('no-loader');
+  if (loaderShown) {
+    video.pause();
+    video.preload = 'auto'; // le début se met en mémoire pendant le chargement
+    document.addEventListener('site-ready', () => {
+      try { video.currentTime = 0; } catch (_) { /* ignore */ }
+      startVideo();
+    }, { once: true });
+  } else {
+    startVideo();
+  }
   // Pause hors écran pour économiser batterie et data.
   new IntersectionObserver(([entry]) => {
     if (!entry.isIntersecting && !video.paused) { video.dataset.autoPaused = '1'; video.pause(); }
@@ -140,8 +156,6 @@ navLinks.forEach((a) => { const s = document.querySelector(a.getAttribute('href'
       loader.classList.add('is-done');
       loader.setAttribute('aria-busy', 'false');
       document.dispatchEvent(new CustomEvent('site-ready'));
-      // la vidéo du hero repart du début au moment où le site apparaît
-      if (video && !reduceMotion) { try { video.currentTime = 0; } catch (_) { /* ignore */ } video.play().catch(() => {}); }
       setTimeout(() => loader.classList.add('is-gone'), 900);
     }, lift);
   }
@@ -365,15 +379,52 @@ function escapeHtml(value) {
 }
 
 const STAR_SVG = '<svg viewBox="0 0 20 20" width="18" height="18"><path fill="currentColor" d="M10 1.6l2.47 5.3 5.8.68-4.29 3.95 1.15 5.73L10 14.4l-5.13 2.86 1.15-5.73L1.73 7.58l5.8-.68z"/></svg>';
+/* Petits monstres (avatars des avis) : générés à partir du prénom, toujours les mêmes pour une personne. */
+const MONSTER_COLORS = ['#f6d7c3', '#e4ecd9', '#ece0f2', '#f5eddc', '#f3d9de', '#dfe9e4', '#f1e4cf', '#e6e1f4'];
+function monsterSvg(seed) {
+  let h = 2166136261;
+  for (const ch of String(seed)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  const pick = (n) => { const v = h % n; h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0; return v; };
+  const ink = '#1d1d1f';
+  const bg = MONSTER_COLORS[pick(MONSTER_COLORS.length)];
+  const body = MONSTER_COLORS[(MONSTER_COLORS.indexOf(bg) + 3 + pick(4)) % MONSTER_COLORS.length];
+  const bodies = [
+    'M10 46V24a14 14 0 0 1 28 0v22z',
+    'M8 46c0-14 4-30 16-30s16 16 16 30z',
+    'M9 46V22c0-4 3-7 7-7h16c4 0 7 3 7 7v24z',
+    'M7 46c1-10-2-16 2-22 3-5 9-8 15-8s12 3 15 8c4 6 1 12 2 22z',
+  ];
+  const tops = [
+    '',
+    `<path d="M15 19l-3-8 7 5M33 19l3-8-7 5" fill="${body}" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>`,
+    `<path d="M20 16c-1-4-3-6-5-7M28 16c1-4 3-6 5-7" fill="none" stroke="${ink}" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="9" r="2" fill="${ink}"/><circle cx="33" cy="9" r="2" fill="${ink}"/>`,
+    `<path d="M24 16v-6" stroke="${ink}" stroke-width="1.6" stroke-linecap="round"/><circle cx="24" cy="9" r="2.4" fill="${ink}"/>`,
+  ];
+  const eye = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${ink}" stroke-width="1.4"/><circle cx="${x + 0.6}" cy="${y + 0.6}" r="${r * 0.45}" fill="${ink}"/>`;
+  const eyes = [
+    () => eye(24, 27, 5),
+    () => eye(19, 27, 3.4) + eye(29, 27, 3.4),
+    () => eye(17, 28, 2.8) + eye(24, 25, 3.2) + eye(31, 28, 2.8),
+    () => `<path d="M16 27q3-3 6 0M26 27q3-3 6 0" fill="none" stroke="${ink}" stroke-width="1.6" stroke-linecap="round"/>`,
+  ];
+  const mouths = [
+    `<path d="M19 36q5 4 10 0" fill="none" stroke="${ink}" stroke-width="1.6" stroke-linecap="round"/>`,
+    `<path d="M19 35h10q0 5-5 5t-5-5z" fill="${ink}"/><path d="M21 35v2l1.5-2M27 35v2l-1.5-2" fill="#fff"/>`,
+    `<ellipse cx="24" cy="37" rx="2.6" ry="2" fill="${ink}"/>`,
+    `<path d="M18 36q2 2 4 0q2 2 4 0q2 2 4 0" fill="none" stroke="${ink}" stroke-width="1.6" stroke-linecap="round"/>`,
+  ];
+  const blush = pick(2) ? '<circle cx="15" cy="34" r="2" fill="#f2a7a0" opacity=".6"/><circle cx="33" cy="34" r="2" fill="#f2a7a0" opacity=".6"/>' : '';
+  return `<svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true"><rect width="48" height="48" fill="${bg}"/>` +
+    tops[pick(tops.length)] +
+    `<path d="${bodies[pick(bodies.length)]}" fill="${body}" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>` +
+    eyes[pick(eyes.length)]() + mouths[pick(mouths.length)] + blush + '</svg>';
+}
+
 function reviewCard(review) {
   const name = review.name || 'Avis Google';
-  const initial = escapeHtml(name.trim().charAt(0).toUpperCase() || '?');
-  const photo = typeof review.photoUrl === 'string' && review.photoUrl.trim();
   const rating = Math.max(0, Math.min(5, Math.round(Number(review.rating) || 5)));
   const stars = Array.from({ length: 5 }, (_, i) => `<span class="${i < rating ? 'is-on' : ''}">${STAR_SVG}</span>`).join('');
-  const avatar = photo
-    ? `<img class="review__avatar" src="${escapeHtml(photo)}" alt="" width="48" height="48" loading="lazy" referrerpolicy="no-referrer">`
-    : `<span class="review__avatar" aria-hidden="true">${initial}</span>`;
+  const avatar = `<span class="review__avatar review__avatar--monster" aria-hidden="true">${monsterSvg(name + (review.date || ''))}</span>`;
   const article = document.createElement('article');
   article.className = 'review';
   article.innerHTML =
@@ -383,14 +434,6 @@ function reviewCard(review) {
     '<button type="button" class="review__more" hidden aria-expanded="false">Voir plus</button>' +
     `<div class="review__author">${avatar}<div><p class="review__name">${escapeHtml(name)}</p>` +
     `<p class="review__meta">Avis Google${review.date ? ` · ${escapeHtml(review.date)}` : ''}</p></div></div>`;
-  const img = article.querySelector('img.review__avatar');
-  img?.addEventListener('error', () => {
-    const span = document.createElement('span');
-    span.className = 'review__avatar';
-    span.setAttribute('aria-hidden', 'true');
-    span.textContent = initial;
-    img.replaceWith(span);
-  }, { once: true });
   return article;
 }
 

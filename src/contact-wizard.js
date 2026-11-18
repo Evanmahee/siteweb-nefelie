@@ -150,9 +150,7 @@
     var header = document.querySelector(".gnav") || document.querySelector(".site-header") || document.querySelector(".header");
     var offset = (header ? Math.max(0, header.getBoundingClientRect().bottom) : 0) + 16;
     var top = window.scrollY + target.getBoundingClientRect().top - offset;
-    var reduceMotion =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var reduceMotion = false; // animations jouées pour tout le monde
 
     window.scrollTo({
       top: Math.max(0, top),
