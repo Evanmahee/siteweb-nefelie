@@ -66,7 +66,7 @@
       <a href="/#faq">FAQ</a>
       <a href="#contact">Contact</a>
     </nav>
-    <a class="pill pill--lg pill--block" href="#contact">Réserver mon bilan · 50&nbsp;€</a>
+    <a class="pill pill--lg pill--block" href="#contact" data-prefill="bilan">Réserver mon bilan · 50&nbsp;€</a>
   </div>
 </header>
 
@@ -118,7 +118,7 @@
               <li class="is-off"><strong>Bilans hebdo &amp; WhatsApp</strong>non inclus</li>
             </ul><p class="plan__ideal">Idéal si tu es sur place et veux progresser en salle, mouvement après mouvement.</p></details>
             </div>
-            <a class="plan__cta" href="/contact.html?suivi=presentiel" data-prefill="presentiel">Choisir</a>
+            <a class="plan__cta" href="/contact.html?suivi=presentiel#contact" data-prefill="presentiel">Choisir</a>
           </div>
         </article>
 <article class="plan" data-key="distance">
@@ -142,7 +142,7 @@
               <li><strong>Contenus</strong>et ressources partagés</li>
             </ul><p class="plan__ideal">Idéal si tu veux un cadre au quotidien, à Vannes ou ailleurs. Un minimum d’autonomie est nécessaire.</p></details>
             </div>
-            <a class="plan__cta" href="/contact.html?suivi=distance" data-prefill="distance">Choisir</a>
+            <a class="plan__cta" href="/contact.html?suivi=distance#contact" data-prefill="distance">Choisir</a>
           </div>
         </article>
 <article class="plan plan--featured" data-key="complet">
@@ -166,7 +166,7 @@
               <li><strong>Accès salle</strong>sans abonnement</li>
             </ul><p class="plan__ideal">Idéal si tu veux la technique sur place et un vrai suivi entre les séances.</p></details>
             </div>
-            <a class="plan__cta" href="/contact.html?suivi=complet" data-prefill="complet">Choisir</a>
+            <a class="plan__cta" href="/contact.html?suivi=complet#contact" data-prefill="complet">Choisir</a>
           </div>
         </article>
 <article class="plan plan--dark" data-key="become">
@@ -190,7 +190,7 @@
               <li><strong>Séances</strong>présentiel et/ou distanciel si besoin</li>
             </ul><p class="plan__ideal">Idéal si tu encadres une équipe et enchaînes réunions et déplacements.</p></details>
             </div>
-            <a class="plan__cta" href="/contact.html?suivi=become" data-prefill="become">En parler</a>
+            <a class="plan__cta" href="/contact.html?suivi=become#contact" data-prefill="become">En parler</a>
           </div>
         </article>
   </div>
@@ -245,6 +245,12 @@
                       <span class="form-wizard__step-name">Tes coordonnées</span>
                       <span class="form-wizard__safe"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path fill="none" stroke="currentColor" stroke-width="1.8" d="M8 10V7.5a4 4 0 018 0V10"/></svg>Lu uniquement par Néfélie</span>
                     </div>
+                  </div>
+
+                  <div class="form-choice" data-form-choice hidden aria-live="polite">
+                    <span class="form-choice__check" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+                    <span class="form-choice__text"><span class="form-choice__label">Ton choix</span> <strong data-form-choice-label></strong></span>
+                    <span class="form-choice__note">Modifiable à l’étape 6</span>
                   </div>
 
                   <div class="form-wizard__step is-active" data-step="1">
@@ -846,7 +852,7 @@
         <img src="/assets/nc-logo-transparent.png" width="477" height="399" alt="NC Coaching" loading="lazy" decoding="async">
         <p>Coaching sportif à Vannes et à distance. Technique, nutrition et suivi humain pour avancer durablement.</p>
       </div>
-      <a class="gfoot__pill" href="#contact">Réserver mon bilan <span aria-hidden="true">↗</span></a>
+      <a class="gfoot__pill" href="#contact" data-prefill="bilan">Réserver mon bilan <span aria-hidden="true">↗</span></a>
     </div>
     <div class="gfoot__cols">
       <div><h3>Coaching</h3><a href="/#suivis">Suivi sportif</a><a href="/#suivis">Suivi distanciel</a><a href="/#suivis">Hybride premium</a><a href="/#suivis">BeCome</a></div>

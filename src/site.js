@@ -360,15 +360,13 @@ function setCounterValue(el, value) {
 })();
 
 /* ---------- Préremplissage du formulaire depuis une offre ---------- */
+// Sur la page contact, les liens d'offre cochent la case et descendent au formulaire sans recharger la page.
+// Ailleurs, le lien emmène sur /contact.html?suivi=… et le formulaire se préremplit au chargement.
 document.querySelectorAll('[data-prefill]').forEach((link) => {
-  link.addEventListener('click', () => {
-    const value = link.dataset.prefill;
-    const box = document.querySelector(`#contact-form input[name="type_accompagnement[]"][value="${value}"]`);
-    if (box) box.checked = true;
-    const section = document.getElementById('contact');
-    section?.classList.remove('is-highlight');
-    void section?.offsetWidth;
-    section?.classList.add('is-highlight');
+  link.addEventListener('click', (e) => {
+    if (!document.getElementById('contact-form')) return;
+    e.preventDefault();
+    document.dispatchEvent(new CustomEvent('suivi:select', { detail: link.dataset.prefill }));
   });
 });
 
@@ -872,9 +870,39 @@ function measureReviews(track) {
       window.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' });
     }
   });
-  if (new URLSearchParams(window.location.search).get('bilan') === '1') select('bilan');
-  const fromUrl = new URLSearchParams(window.location.search).get('suivi');
-  if (fromUrl && /^[a-z]+$/.test(fromUrl)) select(fromUrl);
+  // Rappel du choix en haut du formulaire, mis à jour à chaque case cochée ou décochée
+  const chip = form.querySelector('[data-form-choice]');
+  const chipLabel = chip?.querySelector('[data-form-choice-label]');
+  const syncChip = () => {
+    if (!chip) return;
+    const names = [...form.querySelectorAll('input[name="type_accompagnement[]"]:checked')]
+      .map((box) => {
+        const title = box.closest('label, .contact-option-card')?.querySelector('.contact-option-card__title');
+        // texte du titre seul, sans le badge (« Le plus complet »)
+        const text = title ? [...title.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join('') : box.value;
+        return text.replace(/\s+/g, ' ').trim();
+      });
+    chip.hidden = !names.length;
+    if (chipLabel) chipLabel.textContent = names.join(' + ');
+  };
+  form.addEventListener('change', (e) => { if (e.target.name === 'type_accompagnement[]') syncChip(); });
+  form.addEventListener('reset', () => setTimeout(syncChip));
+  document.addEventListener('suivi:select', syncChip);
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('bilan') === '1') select('bilan');
+  const fromUrl = params.get('suivi');
+  if (fromUrl && /^[a-z]+$/.test(fromUrl)) {
+    form.querySelectorAll('input[name="type_accompagnement[]"]').forEach((box) => { box.checked = false; });
+    select(fromUrl, { highlight: true });
+    // on arrive directement sur la fiche, avec le rappel du choix visible
+    window.addEventListener('load', () => setTimeout(() => {
+      const card = form.closest('.contact__card') || form;
+      const top = card.getBoundingClientRect().top + window.scrollY - (document.querySelector('.gnav')?.offsetHeight || 0) - 12;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }, 150), { once: true });
+  }
+  syncChip();
 })();
 
 /* ---------- Plans : flèches du carrousel, affichées seulement s'il déborde ---------- */
